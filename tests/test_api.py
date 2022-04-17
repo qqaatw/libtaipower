@@ -216,14 +216,16 @@ class TestTaipowerAPI:
 
                 return "OK", return_value
             
+            async def mock_failed(time_period, dt, electric_number, client=None):
+                return "Not OK", {}
+            
             mock_get_data.side_effect = mock
             ami = api.get_ami(MOCK_ELECTRIC_NUMBER)
 
             assert isinstance(ami, dict)
             assert isinstance(ami["20220403000000"], TaipowerAMI)
 
-            mock_get_data.side_effect = None
-            mock_get_data.return_value = ("Not OK", {})
+            mock_get_data.side_effect = mock_failed
 
             with pytest.raises(RuntimeError, match=f"An error occurred when retrieving AMI: Not OK"):
                 api.get_ami(MOCK_ELECTRIC_NUMBER)
@@ -246,13 +248,15 @@ class TestTaipowerAPI:
 
                 return "OK", return_value
             
+            async def mock_failed(electric_number, client=None):
+                return "Not OK", {}
+            
             mock_get_data.side_effect = mock
             ami_bill = api.get_ami_bill(MOCK_ELECTRIC_NUMBER)
 
             assert isinstance(ami_bill, TaipowerAMIBill)
 
-            mock_get_data.side_effect = None
-            mock_get_data.return_value = ("Not OK", {})
+            mock_get_data.side_effect = mock_failed
 
             with pytest.raises(RuntimeError, match=f"An error occurred when retrieving AMI bill: Not OK"):
                 api.get_ami_bill(MOCK_ELECTRIC_NUMBER)
@@ -273,14 +277,16 @@ class TestTaipowerAPI:
 
                 return "OK", return_value
             
+            async def mock_failed(electric_number, client=None):
+                return "Not OK", {}
+            
             mock_get_data.side_effect = mock
             bill_records = api.get_bill_records(MOCK_ELECTRIC_NUMBER)
 
             assert isinstance(bill_records, dict)
             assert isinstance(bill_records["2020/08"], TaipowerBillRecord)
 
-            mock_get_data.side_effect = None
-            mock_get_data.return_value = ("Not OK", {})
+            mock_get_data.side_effect = mock_failed
 
             with pytest.raises(RuntimeError, match=f"An error occurred when retrieving bill records: Not OK"):
                 api.get_bill_records(MOCK_ELECTRIC_NUMBER)

@@ -199,7 +199,10 @@ class TaipowerAPI:
         else:
             raise RuntimeError(f"An error occurred when retrieving electric meters: {conn_status}")
         
-        self.refresh_status()
+        try:
+            self.refresh_status() # suppress errors when login
+        except:
+            pass
 
     def reauth(self, use_refresh_token : bool = False) -> None:
         conn = connection.TaipowerConnection(
