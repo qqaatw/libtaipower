@@ -24,6 +24,7 @@ jobs:
       env:
         TEST_ACCOUNT: ${{ secrets.TEST_ACCOUNT }}
         TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+        TEST_ELECTRIC_NUMBER : ${{ secrets.TEST_ELECTRIC_NUMBER }}
       run: |
         python -m pytest ./tests
   deploy:
