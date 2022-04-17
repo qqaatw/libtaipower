@@ -2,6 +2,7 @@ import uuid
 import json
 import logging
 import time
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -66,18 +67,45 @@ class TaipowerConnection:
     def _handle_response(self, response):
         response_json = response.json()
         
-        if response.status_code == httpx.codes.ok:    
-            return "OK", response_json
+        if response.status_code == httpx.codes.ok:
+            if "success" in response_json and "message" in response_json:
+                if response_json["success"] == True:
+                    return "OK", response_json
+                else:
+                    return response_json["message"], response_json
+            else:
+                return "OK", response_json
+        elif "error_description" in response_json:
+            return f"{response_json['error_description']}", response_json
         else:
-            return f"{response_json['error']}", response_json
+            return "Unknown error", response_json
     
-    def _send(self, api_name, json=None):
-        req = httpx.post(
+    def _send(self, api_name, **kwargs):
+        with httpx.Client(proxies=self._proxies) as c:
+            headers = kwargs.pop("headers") if "headers" in kwargs else self._generate_headers()
+            req = c.post(
+                f"https://{ENDPOINT}/{api_name}",
+                headers=headers,
+                **kwargs,
+            )
+        if self._print_response:
+            self.print_response(req)
+
+        message, response_json = self._handle_response(req)
+
+        return message, response_json
+
+    async def _async_send(self, api_name, client=None, **kwargs):
+        c = httpx.AsyncClient(proxies=self._proxies) if client is None else client
+        headers = kwargs.pop("headers") if "headers" in kwargs else self._generate_headers()
+        req = await c.post(
             f"https://{ENDPOINT}/{api_name}",
-            headers=self._generate_headers(),
-            json=json,
-            proxies=self._proxies,
+            headers=headers,
+            **kwargs,
         )
+        if client is None:
+            await c.aclose()
+        
         if self._print_response:
             self.print_response(req)
 
@@ -117,17 +145,7 @@ class TaipowerConnection:
         
         login_headers = self._generate_headers(token_type="basic")
 
-        login_req = httpx.post(
-            f"https://{ENDPOINT}/oauth/token",
-            data=login_json_data,
-            headers=login_headers,
-            proxies=self._proxies,
-        )
-
-        if self._print_response:
-            self.print_response(login_req)
-        
-        status, response = self._handle_response(login_req)
+        status, response = asyncio.run(self._async_send("oauth/token", data=login_json_data, headers=login_headers))
 
         taipower_tokens = None
         if status == "OK" and response["token_type"] == "bearer":
@@ -138,9 +156,15 @@ class TaipowerConnection:
             )
         return status, taipower_tokens
     
-    def get_data(self):
-        raise NotImplementedError
+    def get_data(self, *args, **kwargs):
+        return self._send(self.api_name, json=self.setup_payload(*args, **kwargs))
     
+    async def async_get_data(self, *args, client=None, **kwargs):
+        return await self._async_send(self.api_name, json=self.setup_payload(*args, **kwargs), client=client)
+
+    def setup_payload(self):
+        return None
+
     def print_response(self, response):
         print('===================================================')
         print(self.__class__.__name__, 'Response:')
@@ -161,12 +185,10 @@ class GetMember(TaipowerConnection):
         User password.
     """
 
+    api_name = "member/getData"
+
     def __init__(self, account, password, **kwargs):
         super().__init__(account, password, **kwargs)
-
-    def get_data(self):
-        return self._send("member/getData")
-
 
 class GetAMIBill(TaipowerConnection):
     """API internal endpoint.
@@ -179,17 +201,21 @@ class GetAMIBill(TaipowerConnection):
         User password.
     """
 
-    def __init__(self, account, password, **kwargs):
-        super().__init__(account, password, **kwargs)
+    api_name = "api/home/bills"
     
-    def get_data(self, electric_number: str):
+    def setup_payload(self, electric_number):
         json_data = {
             "phoneNo": self._account,
             "deviceId": "",
             "customNo": electric_number,
         }
-        return self._send(f"api/home/bills", json_data)
+        return json_data
+    
+    def get_data(self, electric_number: str):
+        return super().get_data(electric_number)
 
+    async def async_get_data(self, electric_number: str, client: httpx.AsyncClient = None):
+        return await super().async_get_data(electric_number, client=client)
 
 class GetAMI(TaipowerConnection):
     """API internal endpoint.
@@ -205,7 +231,7 @@ class GetAMI(TaipowerConnection):
     def __init__(self, account, password, **kwargs):
         super().__init__(account, password, **kwargs)
     
-    def get_data(self, time_period: str, datetime: datetime, electric_number: str):
+    def setup_payload(self, time_period: str, datetime: datetime, electric_number: str):
         if time_period == "hour":
             time_text = "date"
             time_rep = datetime.strftime("%Y%m%d") # YYYYMMDD
@@ -225,8 +251,13 @@ class GetAMI(TaipowerConnection):
             "custNo": electric_number,
             time_text: time_rep
         }
-        return self._send(f"api/ami/{time_period}", json_data)
-
+        return json_data
+    
+    def get_data(self, time_period: str, datetime: datetime, electric_number: str):
+        return self._send(f"api/ami/{time_period}", json=self.setup_payload(time_period, datetime, electric_number))
+    
+    async def async_get_data(self, time_period: str, datetime: datetime, electric_number: str, client : httpx.AsyncClient = None):
+        return await self._async_send(f"api/ami/{time_period}", json=self.setup_payload(time_period, datetime, electric_number), client=client)
 
 class GetBillRecords(TaipowerConnection):
     """API internal endpoint.
@@ -239,11 +270,19 @@ class GetBillRecords(TaipowerConnection):
         User password.
     """
 
+    api_name = "api/mybill/records"
+
     def __init__(self, account, password, **kwargs):
         super().__init__(account, password, **kwargs)
     
-    def get_data(self, electric_number : str):
+    def setup_payload(self, electric_number : str):
         json_data = {
             "customNo": electric_number,
         }
-        return self._send("api/mybill/records", json_data)
+        return json_data
+    
+    def get_data(self, electric_number: str):
+        return super().get_data(electric_number)
+
+    async def async_get_data(self, electric_number: str, client: httpx.AsyncClient = None):
+        return await super().async_get_data(electric_number, client=client)
