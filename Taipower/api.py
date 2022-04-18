@@ -133,6 +133,8 @@ class TaipowerAPI:
         User password.
     electric_numbers : list of str or str or None, optional
         Electric numbers. If None is given, all available AMI enabled electric meters will be included, by default None.
+    ami_period : str, optional
+        The retrieved AMI period, by default `daily`.
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
     print_response : bool, optional
@@ -143,13 +145,18 @@ class TaipowerAPI:
         account : str,
         password : str,
         electric_numbers : Optional[Union[List[str], str]] = None,
+        ami_period : str = "daily",
         max_retries : int = 5,
         print_response : bool = False
     ) -> None:
 
+        if ami_period not in ["hour", "daily", "monthly", "quater"]:
+            raise ValueError("ami_period accepts either `hour`, `daily`, `monthly`, or `quater`.")
+
         self.account : str = account
         self.password : str = password
         self.electric_numbers : Optional[Union[List[str], str]] = electric_numbers
+        self.ami_period : str = ami_period
         self.max_retries : int = max_retries
         self.print_response : bool = print_response
 
@@ -216,7 +223,7 @@ class TaipowerAPI:
             raise RuntimeError(f"An error occurred when reauthenticating with Taipower API: {conn_status}")
     
     def get_ami(self, electric_number : str, dt: datetime.datetime = None) -> Dict[str, model.TaipowerAMI]:
-        """Get ami.
+        """Get AMI.
 
         Parameters
         ----------
@@ -238,8 +245,8 @@ class TaipowerAPI:
 
         return asyncio.run(self.async_get_ami(electric_number, dt))
 
-    async def async_get_ami(self, electric_number : str, dt: datetime.datetime = None, client : httpx.AsyncClient = None) -> Dict[str, model.TaipowerAMI]:
-        """Asynchronously get ami.
+    async def async_get_ami(self, electric_number : str, dt: Optional[datetime.datetime] = None, client : Optional[httpx.AsyncClient] = None) -> Dict[str, model.TaipowerAMI]:
+        """Asynchronously get AMI.
 
         Parameters
         ----------
@@ -270,7 +277,7 @@ class TaipowerAPI:
             taipower_tokens=self._taipower_tokens,
             print_response=self.print_response,
         )
-        conn_status, conn_json = await conn.async_get_data("daily", dt, electric_number, client=client)
+        conn_status, conn_json = await conn.async_get_data(self.ami_period, dt, electric_number, client=client)
         if conn_status == "OK":
             return model.TaipowerAMI.from_amis(conn_json)
         else:

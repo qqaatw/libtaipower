@@ -164,7 +164,10 @@ class TestTaipowerAPI:
                     }
                 }
                 return "OK", return_value
-    
+
+            async def mock_failed(time_period, dt, electric_number, client=None):
+                return "Not OK", {}
+
             mock_login.return_value = ("OK", "")
             mock_get_data.side_effect = mock
             api.login()
@@ -172,8 +175,7 @@ class TestTaipowerAPI:
             assert isinstance(api.meters, dict)
             assert isinstance(api.meters[MOCK_ELECTRIC_NUMBER], TaipowerElectricMeter)
 
-            mock_get_data.side_effect = None
-            mock_get_data.return_value = ("Not OK", {})
+            mock_get_data.side_effect = mock_failed
 
             with pytest.raises(RuntimeError, match=f"An error occurred when retrieving electric meters: Not OK"):
                 api.login()

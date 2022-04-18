@@ -75,8 +75,11 @@ class TaipowerConnection:
                     return response_json["message"], response_json
             else:
                 return "OK", response_json
-        elif "error_description" in response_json:
-            return f"{response_json['error_description']}", response_json
+        elif "error" in response_json:
+            if "error_description" in response_json:
+                return f"{response_json['error_description']}", response_json
+            else:
+                return f"{response_json['error']}", response_json
         else:
             return "Unknown error", response_json
     

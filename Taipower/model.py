@@ -103,6 +103,3 @@ class TaipowerBillRecord:
     @property
     def paid(self) -> bool:
         return True if self._json["hasPaid"] == "C" else False
-    
-
-    
