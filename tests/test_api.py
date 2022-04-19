@@ -165,7 +165,7 @@ class TestTaipowerAPI:
                 }
                 return "OK", return_value
 
-            async def mock_failed(time_period, dt, electric_number, client=None):
+            async def mock_failed(client=None):
                 return "Not OK", {}
 
             mock_login.return_value = ("OK", "")

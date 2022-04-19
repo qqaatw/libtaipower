@@ -443,7 +443,7 @@ class TaipowerAPI:
 
         collections.deque(
             map(
-                lambda x, y: setattr(y[0], y[1], x) if not isinstance(x, RuntimeError) else errors.append(x),
+                lambda x, y: setattr(y[0], y[1], x) if not isinstance(x, Exception) else errors.append(x),
                 asyncio.run(run(async_functions)),
                 return_storages
             )
