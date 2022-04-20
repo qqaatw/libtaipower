@@ -211,6 +211,19 @@ class TaipowerAPI:
             pass
 
     def reauth(self, use_refresh_token : bool = False) -> None:
+        """Reauthenticate with Taipower API to retrieve new tokens.
+
+        Parameters
+        ----------
+        use_refresh_token : bool, optional
+            Whether or not to use refresh token, by default False
+
+        Raises
+        ------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
+        """
+
         conn = connection.TaipowerConnection(
             account=self.account,
             password=self.password,
