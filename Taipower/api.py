@@ -2,7 +2,6 @@ import time
 import datetime
 import asyncio
 import httpx
-import collections
 from typing import Optional, List, Union, Dict
 
 from . import connection
@@ -134,7 +133,7 @@ class TaipowerAPI:
     electric_numbers : list of str or str or None, optional
         Electric numbers. If None is given, all available AMI enabled electric meters will be included, by default None.
     ami_period : str, optional
-        The retrieved AMI period, by default `daily`.
+        The retrieved AMI period. Available options: `quater`, `hour`, `daily`, `monthly`, by default `daily`.
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
     print_response : bool, optional
@@ -150,8 +149,8 @@ class TaipowerAPI:
         print_response : bool = False
     ) -> None:
 
-        if ami_period not in ["hour", "daily", "monthly", "quater"]:
-            raise ValueError("ami_period accepts either `hour`, `daily`, `monthly`, or `quater`.")
+        if ami_period not in ["quater", "hour", "daily", "monthly"]:
+            raise ValueError("ami_period accepts either `quater`, `hour`, `daily`, `monthly`.")
 
         self.account : str = account
         self.password : str = password
@@ -253,7 +252,7 @@ class TaipowerAPI:
         electric_number : str
             Electric number.
         dt : datetime.datetime, optional
-            The retrieved AMI date and time, by default None
+            The retrieved AMI date and time. If None is given, current date and time will be used, by default None
         client : httpx.AsyncClient, optional
             AsyncClient for requests, by default None
 
@@ -441,7 +440,7 @@ class TaipowerAPI:
                 async_functions.append(self.async_get_bill_records(number, client=client))
                 return_storages.append((meter, "bill_records"))
 
-        collections.deque(
+        list(
             map(
                 lambda x, y: setattr(y[0], y[1], x) if not isinstance(x, Exception) else errors.append(x),
                 asyncio.run(run(async_functions)),
@@ -451,11 +450,3 @@ class TaipowerAPI:
 
         if len(errors) != 0:
             raise RuntimeError(errors)
-
-    def get_status(self, electric_number : str = None):
-        statuses = {}
-        for number, meter in self._meters.items():
-            if electric_number and number != electric_number:
-                continue
-            statuses[number] = meter.ami_bill
-        return statuses

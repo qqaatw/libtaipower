@@ -1,11 +1,11 @@
-from typing import Dict
+from typing import Dict, Optional
 
 class TaipowerAMI:
     def __init__(self, ami : dict):
         self._json = ami
     
     @classmethod
-    def from_amis(cls, ami_json : dict) -> Dict[str, object]:    
+    def from_amis(cls, ami_json : dict) -> Dict[str, object]:
         amis = {}
         for ami in ami_json["data"]["data"]:
             start_time = ami["startTime"]
@@ -25,24 +25,25 @@ class TaipowerAMI:
         return True if self._json["isMssingData"] == 1 else False
     
     @property
-    def offpeak_kwh(self) -> float:
-        return self._json["offPeakKwh"]
+    def offpeak_kwh(self) -> Optional[float]:
+        return self._json.get("offPeakKwh", None)
     
     @property
-    def halfpeak_kwh(self) -> float:
-        return self._json["halfPeakKwh"]
+    def halfpeak_kwh(self) -> Optional[float]:
+        return self._json.get("halfPeakKwh", None)
 
     @property
-    def satpeak_kwh(self) -> float:
-        return self._json["satPeakKwh"]
+    def satpeak_kwh(self) -> Optional[float]:
+        return self._json.get("satPeakKwh", None)
 
     @property
-    def peak_kwh(self) -> float:
-        return self._json["peakTimeKwh"]
+    def peak_kwh(self) -> Optional[float]:
+        return self._json.get("peakTimeKwh", None)
 
     @property
-    def total_kwh(self) -> float:
-        return self._json["totalKwh"]
+    def total_kwh(self) -> Optional[float]:
+        return self._json.get("totalKwh", self._json.get("kwh", None))
+
 
 class TaipowerAMIBill:
     def __init__(self, bill : dict):

@@ -6,8 +6,14 @@ def get_random_key(bytes: int):
     chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_abcdefghijklmnopqrstuvwxyz"
     return ''.join([choice(chars) for _ in range(bytes)])
 
-def des_encrypt(password: str):
+def des_encrypt(plain_text: str):
     key = get_random_key(24)
-    cipher = DES3.new(key.encode(), DES3.MODE_ECB)
-    encrypted_pass = cipher.encrypt( Padding.pad(password.encode("ascii"), 8))
-    return f"{(encrypted_pass).hex()}@{key}"
+    cipher = DES3.new(key.encode("ascii"), DES3.MODE_ECB)
+    encrypted = cipher.encrypt(Padding.pad(plain_text.encode("utf8"), 8))
+    return f"{(encrypted).hex()}@{key}"
+
+def des_decrypt(encrypted : str):
+    encrypted_text, key = encrypted.split("@")
+    cipher = DES3.new(key.encode("ascii"), DES3.MODE_ECB)
+    decrypted = cipher.decrypt(bytes.fromhex(encrypted_text))
+    return Padding.unpad(decrypted, 8).decode("utf8")

@@ -14,9 +14,11 @@ A Python library for retrieving Taipower data.
 ## Supported devices
 
 - Taipower AMI electric meter 臺電 AMI 電錶
-    - AMI info AMI 資訊
+    - AMI info (quarter/hourly/daily/monthly) AMI 資訊 (十五分/每小時/每日/每月)
     - AMI bill AMI 帳單
     - Bill records 帳單紀錄
+- ~~Taipower electric meter 臺電一般電錶~~
+    - ~~Bill records 帳單紀錄~~
 
 ## Installation
 
