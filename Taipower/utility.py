@@ -2,8 +2,9 @@ from Cryptodome.Cipher import DES3
 from Cryptodome.Util import Padding
 from Cryptodome.Random.random import choice
 
+
 def get_random_key(bytes: int) -> str:
-    """Get random key from a list of characters.
+    """Generate a random key from a list of characters.
 
     Parameters
     ----------
@@ -39,7 +40,7 @@ def des_encrypt(plain_text: str):
     return f"{(encrypted).hex()}@{key}"
 
 def des_decrypt(encrypted : str):
-    """Decrypt text with a random key using Triple DES.
+    """Decrypt text using Triple DES.
 
     Parameters
     ----------

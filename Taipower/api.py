@@ -98,26 +98,74 @@ class TaipowerElectricMeter:
 
     @property
     def user_id(self) -> str:
+        """The user id of the electric number.
+
+        Returns
+        -------
+        str
+            The user id of the electric number.
+        """
+
         return str(self._json["userID"])
 
     @property
     def name(self) -> str:
+        """The user name of the electric number.
+
+        Returns
+        -------
+        str
+            The user name of the electric number.
+        """
+
         return self._json["electricName"]
     
     @property
     def nickname(self) -> Optional[str]:
+        """The nickname of the electric number, which can be changed in the Taipower app.
+
+        Returns
+        -------
+        Optional[str]
+            The nickname, if not set in the app, None will be returned.
+        """
+
         return self._json["nickname"] if len(self._json["nickname"]) != 0 else None
     
     @property
     def number(self) -> str:
+        """Electric number.
+
+        Returns
+        -------
+        str
+            Electric number.
+        """
+
         return self._json["electricNumber"]
     
     @property
     def type(self) -> str:
+        """Electric meter type.
+
+        Returns
+        -------
+        str
+            `AMI` or `unknown`.
+        """
+
         return "AMI" if self._json["ami"] == "true" else "unknown"
     
     @property
     def main_addr(self) -> str:
+        """The main address of the electric number.
+
+        Returns
+        -------
+        str
+            The main address of the electric number.
+        """
+
         return self._json["electricAddr"]
 
 

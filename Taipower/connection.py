@@ -15,6 +15,7 @@ APP_VERSION = "3.0.6"
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @dataclass
 class TaipowerTokens:
     access_token: str
