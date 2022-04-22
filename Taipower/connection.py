@@ -132,7 +132,7 @@ class TaipowerConnection:
             (status, Taipower tokens).
         """
 
-        if use_refresh_token and self._aws_tokens != None:
+        if use_refresh_token and self._taipower_tokens != None:
             login_json_data = {
                 "refresh_token": self._taipower_tokens.refresh_token,
                 "grant_type": "refresh_token",
@@ -178,6 +178,37 @@ class TaipowerConnection:
         print('===================================================')
 
 
+class CheckToken(TaipowerConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    account : str
+        User phone number.
+    password : str
+        User password.
+    """
+
+    api_name = "oauth/check_token"
+
+    def __init__(self, account, password, **kwargs):
+        super().__init__(account, password, **kwargs)
+
+    def setup_payload(self, access_token : str):
+        json_data = {
+            "token": access_token,
+        }
+        return json_data
+    
+    def get_data(self, access_token: str):
+        headers = self._generate_headers("basic")
+        return self._send(self.api_name, data=self.setup_payload(access_token), headers=headers)
+
+    async def async_get_data(self, access_token: str, client: httpx.AsyncClient = None):
+        headers = self._generate_headers("basic")
+        return await self._async_send(self.api_name, json=self.setup_payload(access_token), headers=headers, client=client)
+
+
 class GetMember(TaipowerConnection):
     """API internal endpoint.
     
@@ -220,6 +251,24 @@ class GetAMIBill(TaipowerConnection):
 
     async def async_get_data(self, electric_number: str, client: httpx.AsyncClient = None):
         return await super().async_get_data(electric_number, client=client)
+
+
+class GetAMIPowerRate(TaipowerConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    account : str
+        User phone number.
+    password : str
+        User password.
+    """
+
+    api_name = "api/trial/power-rate"
+
+    def __init__(self, account, password, **kwargs):
+        super().__init__(account, password, **kwargs)
+
 
 class GetAMI(TaipowerConnection):
     """API internal endpoint.

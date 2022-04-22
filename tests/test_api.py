@@ -180,6 +180,32 @@ class TestTaipowerAPI:
             with pytest.raises(RuntimeError, match=f"An error occurred when retrieving electric meters: Not OK"):
                 api.login()
 
+    def test_reauth(self, fixture_mock_api):
+        api = fixture_mock_api
+        with patch("Taipower.connection.TaipowerConnection.login") as mock_login:
+            def mock(use_refresh_token=False):
+                if use_refresh_token:
+                    return "OK", TaipowerTokens("ref", api._taipower_tokens.refresh_token, api._taipower_tokens.expiration + 86400)
+                else:
+                    return "OK", TaipowerTokens("noref", "noref", api._taipower_tokens.expiration + 86400)
+            
+            mock_login.side_effect = mock
+            
+            current_tokens = api._taipower_tokens
+            api.reauth()
+            
+            assert api._taipower_tokens.access_token != current_tokens.access_token
+            assert api._taipower_tokens.refresh_token != current_tokens.refresh_token
+            assert api._taipower_tokens.expiration > current_tokens.expiration
+
+            current_tokens = api._taipower_tokens
+            api.reauth(use_refresh_token = True)
+            
+            assert api._taipower_tokens.access_token != current_tokens.access_token
+            assert api._taipower_tokens.refresh_token == current_tokens.refresh_token
+            assert api._taipower_tokens.expiration > current_tokens.expiration
+
+
     def test_get_ami(self, fixture_mock_api):
         api = fixture_mock_api
         with patch("Taipower.connection.GetAMI.async_get_data") as mock_get_data:

@@ -278,7 +278,7 @@ class TaipowerAPI:
             taipower_tokens=self._taipower_tokens,
             print_response=self.print_response,
         )
-        conn_status, self._aws_tokens = conn.login(use_refresh_token=use_refresh_token)
+        conn_status, self._taipower_tokens = conn.login(use_refresh_token=use_refresh_token)
         if conn_status != "OK":
             raise RuntimeError(f"An error occurred when reauthenticating with Taipower API: {conn_status}")
     
