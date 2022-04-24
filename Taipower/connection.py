@@ -80,7 +80,7 @@ class TaipowerConnection:
             if "error_description" in response_json:
                 return f"{response_json['error_description']}", response_json
             else:
-                return f"{response_json['error']}", response_json
+                return f"{response_json['error']} {response_json}", response_json
         else:
             return "Unknown error", response_json
     
