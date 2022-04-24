@@ -198,7 +198,7 @@ class TaipowerAPI:
     ) -> None:
 
         if ami_period not in ["quater", "hour", "daily", "monthly"]:
-            raise ValueError("ami_period accepts either `quater`, `hour`, `daily`, `monthly`.")
+            raise ValueError("ami_period accepts either `quater`, `hour`, `daily` or `monthly`.")
 
         self.account : str = account
         self.password : str = password
@@ -485,7 +485,7 @@ class TaipowerAPI:
 
         client = httpx.AsyncClient()
         async_functions = []
-        return_storages = []
+        return_storage = []
         errors = []
 
         for number, meter in self._meters.items():
@@ -493,19 +493,19 @@ class TaipowerAPI:
                 continue
             if refresh_ami:
                 async_functions.append(self.async_get_ami(number, client=client))
-                return_storages.append((meter, "ami"))
+                return_storage.append((meter, "ami"))
             if refresh_ami_bill:
                 async_functions.append(self.async_get_ami_bill(number, client=client))
-                return_storages.append((meter, "ami_bill"))
+                return_storage.append((meter, "ami_bill"))
             if refresh_bill_records:
                 async_functions.append(self.async_get_bill_records(number, client=client))
-                return_storages.append((meter, "bill_records"))
+                return_storage.append((meter, "bill_records"))
 
         list(
             map(
                 lambda x, y: setattr(y[0], y[1], x) if not isinstance(x, Exception) else errors.append(x),
                 asyncio.run(run(async_functions)),
-                return_storages
+                return_storage
             )
         )
 

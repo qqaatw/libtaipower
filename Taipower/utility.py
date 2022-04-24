@@ -14,7 +14,7 @@ def get_random_key(bytes: int) -> str:
     Returns
     -------
     str
-        Random key
+        Random key.
     """
 
     chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_abcdefghijklmnopqrstuvwxyz"

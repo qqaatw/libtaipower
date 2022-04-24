@@ -138,6 +138,7 @@ class TaipowerConnection:
                 "grant_type": "refresh_token",
             }
         else:
+            use_refresh_token = False
             login_json_data = {
                 "username": self._account,
                 "password": utility.des_encrypt(self._password),
@@ -155,7 +156,7 @@ class TaipowerConnection:
         if status == "OK" and response["token_type"] == "bearer":
             taipower_tokens = TaipowerTokens(
                 access_token = response['access_token'],
-                refresh_token = self._taipower_tokens.refresh_token if use_refresh_token else response['refresh_token'],
+                refresh_token = response['refresh_token'],
                 expiration = time.time() + response['expires_in'],
             )
         return status, taipower_tokens
