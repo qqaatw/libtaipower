@@ -9,7 +9,7 @@ import datetime
 from unittest.mock import patch, MagicMock
 
 from Taipower.api import TaipowerAPI, TaipowerElectricMeter
-from Taipower.model import TaipowerAMI, TaipowerAMIBill, TaipowerBillRecord
+from Taipower.model import TaipowerAMI, TaipowerAMIBill, TaipowerAMIUnbilled, TaipowerBillRecord
 from Taipower.connection import TaipowerTokens
 
 from . import MOCK_ELECTRIC_NUMBER
@@ -105,6 +105,17 @@ def fixture_mock_meter():
             "chargeInfo": "charge info",
             "recvDate": "",
             "hasPaid": "B"
+            }"""
+        )
+    )
+    meter.ami_unbilled = TaipowerAMIUnbilled(
+        json.loads(
+            """{"readingDate": "1110401",
+            "lastReadDate": "1110301",
+            "nextReadingDate": "1110501",
+            "totalAmount": "964",
+            "payDeadline": "1110605",
+            "finalKwh": "100.0"
             }"""
         )
     )
@@ -270,9 +281,7 @@ class TestTaipowerAPI:
                     "success": True,
                     "code": 1,
                     "message": "123",
-                    "data": [
-                        meter.ami_bill._json                        
-                    ]
+                    "data": meter.ami_bill._json       
                 }
 
                 return "OK", return_value
@@ -289,6 +298,35 @@ class TestTaipowerAPI:
 
             with pytest.raises(RuntimeError, match=f"An error occurred when retrieving AMI bill: Not OK"):
                 api.get_ami_bill(MOCK_ELECTRIC_NUMBER)
+    
+    def test_get_ami_unbilled(self, fixture_mock_api, fixture_mock_meter):
+        api = fixture_mock_api
+        meter = fixture_mock_meter
+        with patch("Taipower.connection.GetAMIUnbilled.async_get_data") as mock_get_data:
+            async def mock(electric_number, client=None):
+                assert electric_number == MOCK_ELECTRIC_NUMBER
+                assert client is None or isinstance(client, httpx.AsyncClient)
+                return_value = {
+                    "success": True,
+                    "code": 1,
+                    "message": "123",
+                    "data": meter.ami_unbilled._json
+                }
+
+                return "OK", return_value
+            
+            async def mock_failed(electric_number, client=None):
+                return "Not OK", {}
+            
+            mock_get_data.side_effect = mock
+            ami_unbilled = api.get_ami_unbilled(MOCK_ELECTRIC_NUMBER)
+
+            assert isinstance(ami_unbilled, TaipowerAMIUnbilled)
+
+            mock_get_data.side_effect = mock_failed
+
+            with pytest.raises(RuntimeError, match=f"An error occurred when retrieving AMI unbilled: Not OK"):
+                api.get_ami_unbilled(MOCK_ELECTRIC_NUMBER)
     
     def test_get_bill_records(self, fixture_mock_api, fixture_mock_meter):
         api = fixture_mock_api
@@ -366,6 +404,7 @@ nickname: a nick name"""
         attrs = [
             ("ami", dict),
             ("ami_bill", TaipowerAMIBill),
+            ("ami_unbilled", TaipowerAMIUnbilled),
             ("bill_records", dict),
             ("user_id", str),
             ("name", str),

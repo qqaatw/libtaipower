@@ -23,7 +23,7 @@ copyright = '2022, Allan Lin'
 author = 'Allan Lin'
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.0.3'
+release = 'v0.0.4'
 
 
 # -- General configuration ---------------------------------------------------
