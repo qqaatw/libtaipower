@@ -21,6 +21,7 @@ class TaipowerElectricMeter:
         self._json : dict = electric_meter_json
         self._ami : Optional[Dict[str, model.TaipowerAMI]] = None
         self._ami_bill : Optional[model.TaipowerAMIBill] = None
+        self._ami_unbilled : Optional[model.TaipowerAMIUnbilled] = None
         self._bill_records : Optional[Dict[str, model.TaipowerBillRecord]] = None
     
     def __repr__(self) -> str:
@@ -87,6 +88,14 @@ class TaipowerElectricMeter:
     @ami_bill.setter
     def ami_bill(self, x : model.TaipowerAMIBill):
         self._ami_bill = x
+    
+    @property
+    def ami_unbilled(self) -> Optional[model.TaipowerAMIUnbilled]:
+        return self._ami_unbilled
+    
+    @ami_unbilled.setter
+    def ami_unbilled(self, x : model.TaipowerAMIUnbilled):
+        self._ami_unbilled = x
     
     @property
     def bill_records(self) -> Optional[Dict[str, model.TaipowerBillRecord]]:
@@ -223,7 +232,7 @@ class TaipowerAPI:
         return self._meters
     
     def _check_before_publish(self) -> None:
-        # Reauthenticate 2 hours (7200 seconds) before TaipowerTokens expiration.
+        # Reauthenticate 2 hours (7200 seconds), which is regarded as logged out, before TaipowerTokens expiration.
         current_time = time.time()
         if self._taipower_tokens.expiration - current_time <= 7200:
             self.reauth()
@@ -398,6 +407,61 @@ class TaipowerAPI:
         else:
             raise RuntimeError(f"An error occurred when retrieving AMI bill: {conn_status}")
 
+    def get_ami_unbilled(self, electric_number : str) -> model.TaipowerAMIUnbilled:
+        """Get AMI unbilled.
+
+        Parameters
+        ----------
+        electric_number : str
+            Electric number.
+
+        Returns
+        -------
+        model.TaipowerAMIUnbilled
+            AMI unbilled.
+
+        Raises
+        ------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
+        """
+
+        return asyncio.run(self.async_get_ami_unbilled(electric_number))
+
+    async def async_get_ami_unbilled(self, electric_number : str, client : httpx.AsyncClient = None) -> model.TaipowerAMIUnbilled:
+        """Asynchronously get AMI unbilled.
+
+        Parameters
+        ----------
+        electric_number : str
+            Electric number.
+        client : httpx.AsyncClient, optional
+            AsyncClient for requests, by default None
+
+        Returns
+        -------
+        model.TaipowerAMIUnbilled
+            AMI unbilled.
+
+        Raises
+        ------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
+        """
+
+        conn = connection.GetAMIUnbilled(
+            account=self.account,
+            password=self.password,
+            taipower_tokens=self._taipower_tokens,
+            print_response=self.print_response,
+        )
+        conn_status, conn_json = await conn.async_get_data(electric_number, client=client)
+
+        if conn_status == "OK":
+            return model.TaipowerAMIUnbilled(conn_json["data"])
+        else:
+            raise RuntimeError(f"An error occurred when retrieving AMI unbilled: {conn_status}")
+
     def get_bill_records(self, electric_number : int) -> Dict[str, model.TaipowerBillRecord]:
         """Get bill records.
 
@@ -457,6 +521,7 @@ class TaipowerAPI:
         electric_number : str = None,
         refresh_ami : bool = True,
         refresh_ami_bill : bool = True,
+        refresh_ami_unbilled : bool = True,
         refresh_bill_records : bool = True,
     ):
         """Refresh status from Taipower API.
@@ -469,6 +534,8 @@ class TaipowerAPI:
             Whether or not to refresh AMI, by default True
         refresh_ami_bill : bool, optional
             Whether or not to refresh AMI bill, by default True
+        refresh_ami_unbilled : bool, optional
+            Whether or not to refresh AMI unbilled, by default True
         refresh_bill_records : bool, optional
             Whether or not to refresh bill records, by default True
 
@@ -497,6 +564,9 @@ class TaipowerAPI:
             if refresh_ami_bill:
                 async_functions.append(self.async_get_ami_bill(number, client=client))
                 return_storage.append((meter, "ami_bill"))
+            if refresh_ami_unbilled:
+                async_functions.append(self.async_get_ami_unbilled(number, client=client))
+                return_storage.append((meter, "ami_unbilled"))
             if refresh_bill_records:
                 async_functions.append(self.async_get_bill_records(number, client=client))
                 return_storage.append((meter, "bill_records"))
