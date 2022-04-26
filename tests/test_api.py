@@ -137,7 +137,7 @@ def fixture_mock_meter():
 @pytest.fixture()
 def fixture_mock_api(fixture_mock_meter):
     api = TaipowerAPI("", "")
-    api._taipower_tokens = TaipowerTokens("", "", time.time() + 3600)
+    api._taipower_tokens = TaipowerTokens("", "", time.time() + 7300) # the expiration should beyond 2 hours to prevent reauth process.
     api._meters = {
         MOCK_ELECTRIC_NUMBER: fixture_mock_meter,
     }
@@ -323,6 +323,7 @@ class TestTaipowerAPI:
         api = fixture_mock_api
         with patch.object(api, "async_get_ami") as mock_get_ami, \
              patch.object(api, "async_get_ami_bill") as mock_get_ami_bill, \
+             patch.object(api, "async_get_ami_unbilled") as mock_get_ami_unbilled, \
              patch.object(api, "async_get_bill_records") as mock_get_bill_records:
             
             async def mock(*args, **kwargs):
@@ -332,19 +333,22 @@ class TestTaipowerAPI:
             
             mock_get_ami.side_effect = mock
             mock_get_ami_bill.side_effect = mock
+            mock_get_ami_unbilled.side_effect = mock
             mock_get_bill_records.side_effect = mock
 
             api.refresh_status()
 
             assert api.meters[MOCK_ELECTRIC_NUMBER].ami == "Mock Object"
             assert api.meters[MOCK_ELECTRIC_NUMBER].ami_bill == "Mock Object"
+            assert api.meters[MOCK_ELECTRIC_NUMBER].ami_unbilled == "Mock Object"
             assert api.meters[MOCK_ELECTRIC_NUMBER].bill_records == "Mock Object"
 
             mock_get_ami.side_effect = mock_exception
             mock_get_ami_bill.side_effect = mock_exception
+            mock_get_ami_unbilled.side_effect = mock_exception
             mock_get_bill_records.side_effect = mock_exception
 
-            with pytest.raises(RuntimeError, match=f"[RuntimeError(), RuntimeError(), RuntimeError()]"):
+            with pytest.raises(RuntimeError, match=f"[RuntimeError(), RuntimeError(), RuntimeError(), RuntimeError()]"):
                 api.refresh_status()
 
 

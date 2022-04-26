@@ -57,3 +57,21 @@ def des_decrypt(encrypted : str):
     cipher = DES3.new(key.encode("ascii"), DES3.MODE_ECB)
     decrypted = cipher.decrypt(bytes.fromhex(encrypted_text))
     return Padding.unpad(decrypted, 8).decode("utf8")
+
+def roc_year_to_wastern(date_text : str) -> str:
+    """Convert ROC year to wastern year.
+
+    Parameters
+    ----------
+    date_text : str
+        `yyy...`.
+
+    Returns
+    -------
+    str
+        `yyyy...`
+    """
+
+    assert len(date_text) >= 7, "The `date_text` should be in `yyy...` format."
+
+    return f"{ str( 1911 + int(date_text[0:3])) }{date_text[3:]}"

@@ -87,9 +87,11 @@ class TaipowerConnection:
     def _send(self, api_name, **kwargs):
         with httpx.Client(proxies=self._proxies) as c:
             headers = kwargs.pop("headers") if "headers" in kwargs else self._generate_headers()
+            timeout = kwargs.pop("timeout") if "timeout" in kwargs else 10.0
             req = c.post(
                 f"https://{ENDPOINT}/{api_name}",
                 headers=headers,
+                timeout=timeout,
                 **kwargs,
             )
         if self._print_response:
@@ -102,9 +104,11 @@ class TaipowerConnection:
     async def _async_send(self, api_name, client=None, **kwargs):
         c = httpx.AsyncClient(proxies=self._proxies) if client is None else client
         headers = kwargs.pop("headers") if "headers" in kwargs else self._generate_headers()
+        timeout = kwargs.pop("timeout") if "timeout" in kwargs else 10.0
         req = await c.post(
             f"https://{ENDPOINT}/{api_name}",
             headers=headers,
+            timeout=timeout,
             **kwargs,
         )
         if client is None:
@@ -180,7 +184,7 @@ class TaipowerConnection:
 
 
 class CheckToken(TaipowerConnection):
-    """API internal endpoint.
+    """API internal endpoint. Note: Uses `application/x-www-form-urlencoded` content type.
     
     Parameters
     ----------
@@ -207,7 +211,63 @@ class CheckToken(TaipowerConnection):
 
     async def async_get_data(self, access_token: str, client: httpx.AsyncClient = None):
         headers = self._generate_headers("basic")
-        return await self._async_send(self.api_name, json=self.setup_payload(access_token), headers=headers, client=client)
+        return await self._async_send(self.api_name, data=self.setup_payload(access_token), headers=headers, client=client)
+
+
+class CheckVersion(TaipowerConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    account : str
+        User phone number.
+    password : str
+        User password.
+    """
+
+    api_name = "checking/android/version"
+
+    def __init__(self, account, password, **kwargs):
+        super().__init__(account, password, **kwargs)
+
+    def setup_payload(self, version : str):
+        json_data = {
+            "version": version,
+        }
+        return json_data
+    
+    def get_data(self, version: str):
+        headers = self._generate_headers("basic")
+        return self._send(self.api_name, json=self.setup_payload(version), headers=headers)
+
+    async def async_get_data(self, version: str, client: httpx.AsyncClient = None):
+        headers = self._generate_headers("basic")
+        return await self._async_send(self.api_name, json=self.setup_payload(version), headers=headers, client=client)
+
+
+class Greeting(TaipowerConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    account : str
+        User phone number.
+    password : str
+        User password.
+    """
+
+    api_name = "common/hello"
+
+    def __init__(self, account, password, **kwargs):
+        super().__init__(account, password, **kwargs)
+    
+    def get_data(self):
+        headers = self._generate_headers("basic")
+        return self._send(self.api_name, headers=headers)
+
+    async def async_get_data(self, client: httpx.AsyncClient = None):
+        headers = self._generate_headers("basic")
+        return await self._async_send(self.api_name, headers=headers, client=client)
 
 
 class GetMember(TaipowerConnection):
@@ -312,6 +372,36 @@ class GetAMI(TaipowerConnection):
     
     async def async_get_data(self, time_period: str, datetime: datetime, electric_number: str, client : httpx.AsyncClient = None):
         return await self._async_send(f"api/ami/{time_period}", json=self.setup_payload(time_period, datetime, electric_number), client=client)
+
+
+class GetAMIUnbilled(TaipowerConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    account : str
+        User phone number.
+    password : str
+        User password.
+    """
+
+    api_name = "applyCase/amiUnbillData"
+
+    def __init__(self, account, password, **kwargs):
+        super().__init__(account, password, **kwargs)
+    
+    def setup_payload(self, electric_number : str):
+        json_data = {
+            "customNo": electric_number,
+            "forPrepaid": False,
+        }
+        return json_data
+    
+    def get_data(self, electric_number: str):
+        return super().get_data(electric_number)
+
+    async def async_get_data(self, electric_number: str, client: httpx.AsyncClient = None):
+        return await super().async_get_data(electric_number, client=client)
 
 class GetBillRecords(TaipowerConnection):
     """API internal endpoint.

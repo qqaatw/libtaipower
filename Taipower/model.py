@@ -1,5 +1,7 @@
 from typing import Dict, Optional
 
+from .utility import roc_year_to_wastern
+
 class TaipowerAMI:
     """Taipower AMI.
 
@@ -139,7 +141,7 @@ class TaipowerAMIBill:
             In yyyy/mm format.
         """
 
-        return f"{ str( 1911 + int(self._json['startDate'][0:3])) }{self._json['startDate'][3:]}"
+        return roc_year_to_wastern(self._json['startDate'])
 
     @property
     def bill_end_date(self) -> str:
@@ -151,7 +153,8 @@ class TaipowerAMIBill:
             In yyyy/mm format.
         """
 
-        return f"{ str( 1911 + int(self._json['endDate'][0:3])) }{self._json['endDate'][3:]}"
+        return roc_year_to_wastern(self._json['endDate'])
+
     @property
     def current_amount(self) -> int:
         """Current amount.
@@ -199,6 +202,91 @@ class TaipowerAMIBill:
         """
 
         return self._json["lastKwh"]
+
+
+class TaipowerAMIUnbilled:
+    """Taipower AMI unbilled data.
+
+    Parameters
+    ----------
+    unbilled_data : dict
+        AMI unbilled data.
+    """
+
+    def __init__(self, unbilled_data : dict):
+        self._json : dict = unbilled_data
+    
+    @property
+    def charge(self) -> int:
+        """Amount.
+
+        Returns
+        -------
+        int
+            The amount of the unbilled data.
+        """
+
+        return int(self._json["totalAmount"])
+    
+    @property
+    def deadline(self) -> str:
+        """Deadline.
+
+        Returns
+        -------
+        str
+            In yyyymmdd format.
+        """
+
+        return roc_year_to_wastern(self._json["payDeadline"])
+
+    @property
+    def kwh(self) -> float:
+        """Kw/h.
+
+        Returns
+        -------
+        float
+            Kw/h.
+        """
+
+        return float(self._json["finalKwh"])
+    
+    @property
+    def reading_date(self) -> str:
+        """The meter reading date.
+
+        Returns
+        -------
+        str
+            In yyyymmdd format.
+        """
+
+        return roc_year_to_wastern(self._json["readingDate"])
+
+    @property
+    def last_reading_date(self) -> str:
+        """The last meter reading date.
+
+        Returns
+        -------
+        str
+            In yyyymmdd format.
+        """
+
+        return roc_year_to_wastern(self._json["lastReadDate"])
+    
+    @property
+    def next_reading_date(self) -> str:
+        """The next meter reading date.
+
+        Returns
+        -------
+        str
+            In yyyymmdd format.
+        """
+
+        return roc_year_to_wastern(self._json["nextReadingDate"])
 
 
 class TaipowerBillRecord:
