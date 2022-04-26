@@ -152,6 +152,17 @@ class TaipowerElectricMeter:
         """
 
         return self._json["electricNumber"]
+
+    @property
+    def number_verified(self) -> bool:
+        """Whether or not the electric number is verified.
+
+        Returns
+        -------
+        bool
+            Return True if the number is verified.
+        """
+        return True if self._json["verifiedLevel"] not in ["0", "-1"] else False
     
     @property
     def type(self) -> str:
@@ -558,7 +569,7 @@ class TaipowerAPI:
         for number, meter in self._meters.items():
             if electric_number and number != electric_number:
                 continue
-            if refresh_ami:
+            if refresh_ami and meter.number_verified:
                 async_functions.append(self.async_get_ami(number, client=client))
                 return_storage.append((meter, "ami"))
             if refresh_ami_bill:

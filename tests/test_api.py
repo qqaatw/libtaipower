@@ -2,6 +2,7 @@ import pytest
 import time
 import json
 import httpx
+import re
 
 import datetime
 
@@ -338,7 +339,7 @@ class TestTaipowerAPI:
 
             api.refresh_status()
 
-            assert api.meters[MOCK_ELECTRIC_NUMBER].ami == "Mock Object"
+            assert api.meters[MOCK_ELECTRIC_NUMBER].ami == api.meters[MOCK_ELECTRIC_NUMBER].ami # the electric number isn't verified.
             assert api.meters[MOCK_ELECTRIC_NUMBER].ami_bill == "Mock Object"
             assert api.meters[MOCK_ELECTRIC_NUMBER].ami_unbilled == "Mock Object"
             assert api.meters[MOCK_ELECTRIC_NUMBER].bill_records == "Mock Object"
@@ -348,7 +349,7 @@ class TestTaipowerAPI:
             mock_get_ami_unbilled.side_effect = mock_exception
             mock_get_bill_records.side_effect = mock_exception
 
-            with pytest.raises(RuntimeError, match=f"[RuntimeError(), RuntimeError(), RuntimeError(), RuntimeError()]"):
+            with pytest.raises(RuntimeError, match=re.escape("[RuntimeError(), RuntimeError(), RuntimeError()]")):
                 api.refresh_status()
 
 
