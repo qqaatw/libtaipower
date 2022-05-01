@@ -71,6 +71,8 @@ class TaipowerConnection:
         if response.status_code == httpx.codes.ok:
             if "success" in response_json and "message" in response_json:
                 if response_json["success"] == True:
+                    if self.__class__.__name__ == "GetAMIUnbilled" and response_json["data"]["ami"] == False:
+                        return "No AMI unbilled data", response_json                    
                     return "OK", response_json
                 else:
                     return response_json["message"], response_json
