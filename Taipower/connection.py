@@ -1,4 +1,3 @@
-import uuid
 import json
 import logging
 import time
@@ -7,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import httpx
-from . import utility
+from . import DEVICE_ID, utility
 
 ENDPOINT = "mapp-2019.taipower.com.tw"
 BASIC_AUTH = "dHBlYy13U1pvLTVDNjZTZG84ZzM6X1UyVlpZd05kWi1hTW9ILV9fZlctZ3ROR0lwVmgydy4="
@@ -150,7 +149,7 @@ class TaipowerConnection:
                 "password": utility.des_encrypt(self._password),
                 "grant_type": "password",
                 "scope": "tpec",
-                "device_id": str(uuid.uuid4()),
+                "device_id": DEVICE_ID,
                 "appVersion": APP_VERSION,
             }
         
