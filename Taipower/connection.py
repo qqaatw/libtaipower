@@ -8,9 +8,21 @@ from datetime import datetime
 import httpx
 from . import DEVICE_ID, utility
 
-ENDPOINT = "mapp-2019.taipower.com.tw"
+# The legacy host `mapp-2019.taipower.com.tw` was retired (NXDOMAIN). The
+# backend now lives behind `service.taipower.com.tw` and is split into two
+# path-prefixed services: `/tpacct-2023/` for OAuth + member, and
+# `/mapp-2019/` for AMI/bill/applyCase data. Both accept the same bearer JWT.
+HOST = "service.taipower.com.tw"
+AUTH_PREFIX = "tpacct-2023"
+DATA_PREFIX = "mapp-2019"
 BASIC_AUTH = "dHBlYy13U1pvLTVDNjZTZG84ZzM6X1UyVlpZd05kWi1hTW9ILV9fZlctZ3ROR0lwVmgydy4="
-APP_VERSION = "3.0.6"
+APP_VERSION = "3.4.8"
+
+
+def _endpoint_url(api_name: str) -> str:
+    head = api_name.split("/", 1)[0]
+    prefix = AUTH_PREFIX if head in ("oauth", "member") else DATA_PREFIX
+    return f"https://{HOST}/{prefix}/{api_name}"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,7 +102,7 @@ class TaipowerConnection:
             headers = kwargs.pop("headers") if "headers" in kwargs else self._generate_headers()
             timeout = kwargs.pop("timeout") if "timeout" in kwargs else 10.0
             req = c.post(
-                f"https://{ENDPOINT}/{api_name}",
+                _endpoint_url(api_name),
                 headers=headers,
                 timeout=timeout,
                 **kwargs,
@@ -107,7 +119,7 @@ class TaipowerConnection:
         headers = kwargs.pop("headers") if "headers" in kwargs else self._generate_headers()
         timeout = kwargs.pop("timeout") if "timeout" in kwargs else 10.0
         req = await c.post(
-            f"https://{ENDPOINT}/{api_name}",
+            _endpoint_url(api_name),
             headers=headers,
             timeout=timeout,
             **kwargs,
@@ -233,7 +245,7 @@ class CheckVersion(TaipowerConnection):
 
     def setup_payload(self, version : str):
         json_data = {
-            "version": version,
+            "appVersion": version,
         }
         return json_data
     
